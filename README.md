@@ -17,6 +17,25 @@ und druckt **ohne Wasserzeichen** und ohne Lizenzbeschraenkung.
 
 ![Kalibrier-Etikett](test/vorschau_kalibrierung.png)
 
+## Konfigurationsfenster
+
+Etikettengroessen anlegen, Druckursprung kalibrieren, Qualitaet einstellen,
+Testdruck ausloesen -- ohne Terminal.
+
+```
+./gui/build.sh
+open "build/Brady BBP12 Konfiguration.app"
+```
+
+<p>
+<img src="docs/app-kalibrierung.png" width="420">
+<img src="docs/app-etikettengroessen.png" width="420">
+</p>
+
+Die App ist eine Huelle um die Skripte in `tools/` -- alles, was sie tut, geht
+auch auf der Kommandozeile. Fuer privilegierte Schritte (PPD, Konfigurationsdatei)
+fragt macOS selbst nach dem Passwort.
+
 ## Was der Drucker spricht
 
 Der BBP12 ist ein **300-dpi**-Thermodrucker, der **TSPL** (TSC Printer Language)
@@ -90,6 +109,7 @@ Millimeterskala. Damit laesst sich direkt ablesen, was passiert:
 | obere Rahmenlinie fehlt | Ursprung liegt oberhalb des Etiketts | `BradyYOffset` entsprechend erhoehen |
 
 Umrechnung bei 300 dpi: **1 mm = 11,81 Punkte**, bei 203 dpi: 1 mm = 7,99 Punkte.
+Im Konfigurationsfenster gibt man einfach Millimeter ein.
 
 Dauerhaft setzen -- in Millimetern, die Umrechnung macht das Skript:
 
@@ -145,6 +165,15 @@ lp -d Brady_BBP12 -o BradyDensity=12 -o BradyDither=Diffusion logo.pdf
 
 ## Etikettenformate
 
+Anlegen und verwalten entweder im Konfigurationsfenster oder direkt:
+
+```
+./tools/label-size.py list
+sudo ./tools/label-size.py add 62 100
+sudo ./tools/label-size.py default w241h57
+sudo ./tools/label-size.py remove w71h71
+```
+
 Voreingestellt ist **85 x 20 mm** (241 x 57 pt), dazu gibt es 25×25, 50×25,
 62×29, 100×50 und 100×150 mm. Beliebige Größen gehen über „Eigene Papiergröße“
 im Druckdialog – der Filter übernimmt die Maße automatisch in den
@@ -189,9 +218,12 @@ src/rastertobradybbp12.c   CUPS-Rasterfilter (Raster -> TSPL)
 ppd/BradyBBP12.ppd         Formate und Druckoptionen fuer macOS
 install.sh                 kompiliert, installiert, richtet die Queue ein
 uninstall.sh               entfernt alles wieder
+gui/BradyBBP12Config.swift Konfigurationsfenster (SwiftUI)
+gui/build.sh               baut die .app -- kein Xcode-Projekt noetig
 tools/set-offset.sh        Druckursprung in Millimetern justieren
+tools/label-size.py        Etikettengroessen im PPD anlegen/entfernen/als Standard
 tools/selftest.sh          Konfigurationsetikett des Druckers anfordern
-test/make_calibration.py   erzeugt das Kalibrier-Etikett
+test/make_calibration.py   erzeugt ein Kalibrier-Etikett beliebiger Groesse
 test/make_testlabel.py     erzeugt ein einfaches Testetikett
 ```
 
