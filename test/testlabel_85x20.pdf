@@ -1,0 +1,44 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 241 57] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 296 >>
+stream
+q
+0 0 0 rg
+2 2 237 1.5 re f
+2 53.5 237 1.5 re f
+BT /F1 13 Tf 8 32 Td (BRADY BBP12) Tj ET
+BT /F1 7.5 Tf 8 20 Td (Testetikett 85 x 20 mm - 203 dpi) Tj ET
+BT /F1 6 Tf 8 10 Td (TSPL Treiber - ohne Wasserzeichen) Tj ET
+195 8 12 12 re f
+211 8 3 12 re f
+216 8 6 12 re f
+224 8 2 12 re f
+228 8 8 12 re f
+Q
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000240 00000 n 
+0000000587 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+662
+%%EOF
