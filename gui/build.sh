@@ -49,7 +49,17 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-codesign --force --deep --sign - "$APP" 2>/dev/null || true
+# Mit Developer ID signieren, wenn vorhanden -- sonst ad hoc (nur lokal nutzbar).
+APP_ID="${SIGN_APP:-$(security find-identity -v 2>/dev/null \
+        | grep "Developer ID Application" | head -1 | sed -E 's/.*"(.*)"/\1/' || true)}"
+if [ -n "$APP_ID" ]; then
+    echo "==> Signieren: $APP_ID"
+    codesign --force --timestamp --options runtime \
+             --sign "$APP_ID" "$APP"
+else
+    echo "==> Kein Developer-ID-Zertifikat gefunden, signiere ad hoc"
+    codesign --force --sign - "$APP" 2>/dev/null || true
+fi
 
 echo
 echo "Fertig: $APP"

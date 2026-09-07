@@ -60,9 +60,14 @@ Der Druckweg ist: App → PDF → `cgpdftoraster` (macOS) → `rastertobradybbp1
 
 1. **[BradyBBP12-1.0.pkg](../../releases/latest)** von der Releases-Seite laden
 2. Drucker per USB anschliessen und **einschalten**
-3. **Rechtsklick auf die .pkg -> Oeffnen** -- einmalig noetig, weil das Paket
-   nicht notariell signiert ist. Ein Doppelklick wird sonst von macOS blockiert.
+3. Doppelklick. Solange das Paket **nicht notarisiert** ist, blockiert macOS es:
+   dann **Systemeinstellungen -> Datenschutz & Sicherheit** oeffnen, dort unten
+   auf **"Dennoch oeffnen"** klicken und die .pkg erneut oeffnen.
 4. Durch das Installationsprogramm klicken, Passwort eingeben
+
+> Der frueher uebliche Umweg *Rechtsklick -> Oeffnen* funktioniert seit
+> **macOS 15** nicht mehr; Apple hat ihn entfernt. Der Weg fuehrt jetzt
+> ausschliesslich ueber die Systemeinstellungen.
 
 Das Paket bringt den fertig kompilierten Treiber mit -- auf dem Zielrechner
 werden **weder Xcode noch ein Compiler** gebraucht. Es installiert:
@@ -99,6 +104,43 @@ Anderer Warteschlangenname: `sudo ./install.sh MeinName`
 ```
 ./pkg/build-pkg.sh 1.0
 ```
+
+Am Ende meldet das Skript die Gatekeeper-Bewertung des fertigen Pakets.
+
+### Signieren und notarisieren
+
+Notarisierung ist der einzige Weg, den Sicherheitsdialog beim Nutzer ganz
+loszuwerden. Sie setzt eine Mitgliedschaft im **Apple Developer Program**
+voraus (99 USD/Jahr). Reines Signieren genuegt **nicht** -- Gatekeeper
+antwortet dann `Unnotarized Developer ID: rejected`.
+
+1. **Developer ID Installer**-Zertifikat anlegen -- fuer `.pkg` ein eigener
+   Typ, nicht dasselbe wie *Developer ID Application* fuer Programme:
+   Xcode -> Settings -> Accounts -> Manage Certificates -> **+** ->
+   *Developer ID Installer*
+
+2. Notarisierungszugang einmalig im Schluesselbund hinterlegen:
+
+   ```
+   xcrun notarytool store-credentials "BradyBBP12" \
+         --apple-id <deine-apple-id> \
+         --team-id <deine-team-id> \
+         --password <app-spezifisches-passwort>
+   ```
+
+   Das app-spezifische Passwort gibt es unter
+   [appleid.apple.com](https://appleid.apple.com) -> Anmeldung und Sicherheit.
+
+3. Neu bauen:
+
+   ```
+   ./pkg/build-pkg.sh 1.0
+   ```
+
+Das Skript erkennt Zertifikate und Zugangsdaten selbst: es signiert die App mit
+*Developer ID Application*, das Paket mit *Developer ID Installer*, reicht es
+zur Notarisierung ein und heftet die Bestaetigung an. Fehlt etwas, baut es ein
+unsigniertes Paket und sagt genau das.
 
 ### Alte Demo-Warteschlange entfernen
 

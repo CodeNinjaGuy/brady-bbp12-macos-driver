@@ -53,6 +53,10 @@ pkgbuild --root "$PAY" \
          "$STAGE/component.pkg" >/dev/null
 
 echo "==> Installationsprogramm"
+# Developer-ID-Installer-Zertifikat suchen (fuer .pkg ein eigener Typ, nicht
+# dasselbe wie "Developer ID Application" fuer Programme).
+PKG_ID="${SIGN_PKG:-$(security find-identity -v 2>/dev/null \
+        | grep "Developer ID Installer" | head -1 | sed -E 's/.*"(.*)"/\1/' || true)}"
 cat > "$STAGE/distribution.xml" <<XML
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
@@ -71,14 +75,47 @@ cat > "$STAGE/distribution.xml" <<XML
 </installer-gui-script>
 XML
 
-productbuild --distribution "$STAGE/distribution.xml" \
-             --resources "$ROOT/pkg/resources" \
-             --package-path "$STAGE" \
-             "$OUT" >/dev/null
+if [ -n "$PKG_ID" ]; then
+    echo "    signiert mit: $PKG_ID"
+    productbuild --distribution "$STAGE/distribution.xml" \
+                 --resources "$ROOT/pkg/resources" \
+                 --package-path "$STAGE" \
+                 --sign "$PKG_ID" --timestamp \
+                 "$OUT" >/dev/null
+else
+    productbuild --distribution "$STAGE/distribution.xml" \
+                 --resources "$ROOT/pkg/resources" \
+                 --package-path "$STAGE" \
+                 "$OUT" >/dev/null
+fi
+
+# Notarisieren, wenn Zugangsdaten im Schluesselbund hinterlegt sind.
+# Anlegen einmalig mit:
+#   xcrun notarytool store-credentials "BradyBBP12" \
+#         --apple-id <apple-id> --team-id <team-id> --password <app-spezifisches-passwort>
+NOTARY_PROFILE="${NOTARY_PROFILE:-BradyBBP12}"
+if [ -n "$PKG_ID" ] && xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
+    echo "==> Notarisieren (kann einige Minuten dauern)"
+    if xcrun notarytool submit "$OUT" --keychain-profile "$NOTARY_PROFILE" --wait; then
+        xcrun stapler staple "$OUT"
+        echo "    Notarisierung angeheftet."
+    else
+        echo "    Notarisierung fehlgeschlagen -- Paket bleibt nur signiert." >&2
+    fi
+fi
 
 echo
 echo "Fertig: $OUT"
 echo "Groesse: $(du -h "$OUT" | cut -f1)"
 echo
-echo "Hinweis: Das Paket ist nicht signiert. Beim ersten Oeffnen muss der Nutzer"
-echo "         Rechtsklick -> Oeffnen verwenden (einmalig)."
+echo "==> Gatekeeper-Bewertung"
+if spctl -a -vv -t install "$OUT" 2>&1 | grep -q accepted; then
+    echo "    accepted -- laesst sich per Doppelklick oeffnen."
+else
+    spctl -a -vv -t install "$OUT" 2>&1 | sed 's/^/    /'
+    echo
+    echo "    Solange das Paket nicht notarisiert ist, blockiert macOS 15+ den"
+    echo "    Doppelklick. Der Nutzer muss dann ueber Systemeinstellungen ->"
+    echo "    Datenschutz & Sicherheit -> \"Dennoch oeffnen\" gehen."
+    echo "    (Rechtsklick -> Oeffnen funktioniert seit macOS 15 nicht mehr.)"
+fi
