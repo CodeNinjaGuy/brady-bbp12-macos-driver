@@ -14,11 +14,16 @@ NAME="BradyBBP12Config"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-echo "==> Kompilieren"
-swiftc -O -parse-as-library \
-       -target arm64-apple-macos13.0 \
-       -o "$APP/Contents/MacOS/$NAME" \
-       "$ROOT/gui/BradyBBP12Config.swift"
+echo "==> Kompilieren (universal: arm64 + x86_64)"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+for ARCH in arm64 x86_64; do
+    swiftc -O -parse-as-library \
+           -target "${ARCH}-apple-macos13.0" \
+           -o "$TMP/$NAME.$ARCH" \
+           "$ROOT/gui/BradyBBP12Config.swift"
+done
+lipo -create -output "$APP/Contents/MacOS/$NAME" "$TMP/$NAME.arm64" "$TMP/$NAME.x86_64"
 
 echo "==> Werkzeuge und Vorlagen einbetten"
 cp "$ROOT/tools/label-size.py"      "$APP/Contents/Resources/"

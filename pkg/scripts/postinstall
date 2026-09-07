@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# Brady BBP12 macOS driver - postinstall
+# Copyright (c) 2026 SeeBubble Media FlexCo - Martin Bundschuh
+#
+# Richtet die Druckwarteschlange ein, wenn es noch keine gibt.  Eine vorhandene
+# Warteschlange wird bewusst nicht angefasst -- sonst gingen selbst angelegte
+# Etikettengroessen und Einstellungen verloren.
+#
+LPINFO=/usr/sbin/lpinfo
+LPADMIN=/usr/sbin/lpadmin
+LPSTAT=/usr/bin/lpstat
+PPD=/Library/Printers/PPDs/Contents/Resources/BradyBBP12.ppd
+QUEUE=Brady_BBP12
+LOG=/var/log/install.log
+
+say() { echo "Brady BBP12: $*" | tee -a "$LOG"; }
+
+# Bereits eine Warteschlange mit diesem Treiber vorhanden?
+for f in /etc/cups/ppd/*.ppd; do
+    [ -e "$f" ] || continue
+    if grep -q "Brady BBP12 TSPL" "$f" 2>/dev/null; then
+        say "Warteschlange $(basename "$f" .ppd) ist bereits eingerichtet, bleibt unveraendert."
+        exit 0
+    fi
+done
+
+DEVICE="$("$LPINFO" -v 2>/dev/null | awk '/usb:\/\/.*BBP12/ {print $2; exit}')"
+[ -z "$DEVICE" ] && DEVICE="$("$LPINFO" -v 2>/dev/null | awk '/BBP12/ {print $2; exit}')"
+
+if [ -z "$DEVICE" ]; then
+    say "Kein BBP12 am USB gefunden. Treiber ist installiert."
+    say "Drucker anschliessen, einschalten und die App 'Brady BBP12 Konfiguration' oeffnen."
+    exit 0
+fi
+
+say "Gefunden: $DEVICE"
+"$LPADMIN" -p "$QUEUE" -E -v "$DEVICE" -P "$PPD" \
+           -D "Brady BBP12 (TSPL)" -o printer-is-shared=false 2>>"$LOG"
+"$LPSTAT" -p "$QUEUE" >>"$LOG" 2>&1
+say "Warteschlange $QUEUE eingerichtet."
+exit 0

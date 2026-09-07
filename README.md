@@ -56,16 +56,49 @@ Der Druckweg ist: App → PDF → `cgpdftoraster` (macOS) → `rastertobradybbp1
 
 ## Installation
 
+### Installationsprogramm (empfohlen)
+
+1. **[BradyBBP12-1.0.pkg](../../releases/latest)** von der Releases-Seite laden
+2. Drucker per USB anschliessen und **einschalten**
+3. **Rechtsklick auf die .pkg -> Oeffnen** -- einmalig noetig, weil das Paket
+   nicht notariell signiert ist. Ein Doppelklick wird sonst von macOS blockiert.
+4. Durch das Installationsprogramm klicken, Passwort eingeben
+
+Das Paket bringt den fertig kompilierten Treiber mit -- auf dem Zielrechner
+werden **weder Xcode noch ein Compiler** gebraucht. Es installiert:
+
+| | |
+|---|---|
+| `/Library/Printers/Brady/Filters/` | den CUPS-Filter (universal, Apple Silicon + Intel) |
+| `/Library/Printers/PPDs/Contents/Resources/` | das PPD |
+| `/Applications/` | **Brady BBP12 Konfiguration.app** |
+| `/Library/Printers/Brady/tools/` | die Kommandozeilenwerkzeuge |
+
+Die Warteschlange `Brady_BBP12` wird automatisch angelegt, sobald der Drucker
+gefunden wird. Eine **bereits vorhandene** Warteschlange bleibt unangetastet --
+sonst gingen selbst angelegte Etikettengroessen verloren.
+
+Danach einmal kalibrieren: `Brady BBP12 Konfiguration` oeffnen, Reiter
+*Kalibrierung*, *Kalibrier-Etikett drucken*, den Versatz ablesen und sichern.
+
+### Aus dem Quelltext
+
 ```
+git clone https://github.com/CodeNinjaGuy/brady-bbp12-macos-driver.git
+cd brady-bbp12-macos-driver
 sudo ./install.sh
 ```
 
-Das Skript kompiliert den Filter, legt ihn nach
-`/Library/Printers/Brady/Filters/`, installiert das PPD nach
-`/Library/Printers/PPDs/Contents/Resources/`, sucht den BBP12 am USB und richtet
-die Warteschlange **`Brady_BBP12`** ein.
+Hierfuer werden die **Xcode Command Line Tools** benoetigt (`xcode-select --install`),
+weil der Filter vor Ort kompiliert wird.
 
 Anderer Warteschlangenname: `sudo ./install.sh MeinName`
+
+### Installationsprogramm selbst bauen
+
+```
+./pkg/build-pkg.sh 1.0
+```
 
 ### Alte Demo-Warteschlange entfernen
 
@@ -78,8 +111,10 @@ sudo lpadmin -x BRADYBBP12
 ## Deinstallation
 
 ```
-sudo ./uninstall.sh
+sudo /Library/Printers/Brady/tools/uninstall.sh
 ```
+
+Entfernt Warteschlangen, Treiberdateien, die App und die Kalibrierung.
 
 ## Erstinbetriebnahme: Auflösung und Ausrichtung pruefen
 
@@ -220,6 +255,8 @@ install.sh                 kompiliert, installiert, richtet die Queue ein
 uninstall.sh               entfernt alles wieder
 gui/BradyBBP12Config.swift Konfigurationsfenster (SwiftUI)
 gui/build.sh               baut die .app -- kein Xcode-Projekt noetig
+pkg/build-pkg.sh           baut das .pkg-Installationsprogramm
+pkg/scripts/postinstall    richtet die Warteschlange nach der Installation ein
 tools/set-offset.sh        Druckursprung in Millimetern justieren
 tools/label-size.py        Etikettengroessen im PPD anlegen/entfernen/als Standard
 tools/selftest.sh          Konfigurationsetikett des Druckers anfordern
